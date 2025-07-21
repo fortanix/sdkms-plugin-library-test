@@ -8,29 +8,30 @@ This README provides an overview of the Fortanix DSM - Azure Key Vault Integrati
 
 This integration is designed to address the following use cases:
 
-Create Secrets: This takes an existing secret from DSM and imports it into AKV
-Import Secrets: Import an existing secret from AKV into DSM for secure management.
-Import All Secrets: Import all secrets from AKV into DSM for comprehensive management.
-List Secrets: Retrieve a list of secrets stored in AKV.
-List Secret with Versions: Retrieve a list of versions for all secrets stored in AKV.
-Delete Secret: Delete a secret from AKV.
-List of Deleted Secrets: Provides list of deleted secrets from AKV.
-Recover Secret: Recover a previously deleted secret in AKV.
-Purge Secret: Permanently remove a deleted secret from AKV.
+- Create Secrets: This takes an existing secret from DSM and imports it into AKV
+- Import Secrets: Import an existing secret from AKV into DSM for secure management.
+- Import All Secrets: Import all secrets from AKV into DSM for comprehensive management.
+- List Secrets: Retrieve a list of secrets stored in AKV.
+- List Secret with Versions: Retrieve a list of versions for all secrets stored in AKV.
+- Delete Secret: Delete a secret from AKV.
+- List of Deleted Secrets: Provides list of deleted secrets from AKV.
+- Recover Secret: Recover a previously deleted secret in AKV.
+- Purge Secret: Permanently remove a deleted secret from AKV.
 
 ## Setup Process
 
 Configure Azure Authentication:
 
 Run the configure operation with the following parameters:
-tenant_id: Your Azure AD Tenant ID.
-client_id: Your Azure AD Client ID.
-client_secret: Your Azure AD Client Secret.
+- tenant_id: Your Azure AD Tenant ID.
+- client_id: Your Azure AD Client ID.
+- client_secret: Your Azure AD Client Secret.
 
 ## Perform Operations:
 
 Call the desired operation by providing a JSON payload. Here's an example of how to call the import_secret function:
 
+```
 // This will import an existing secret in AKV and import it into DSM
 {
   "operation": "import",
@@ -39,6 +40,7 @@ Call the desired operation by providing a JSON payload. Here's an example of how
   "key_vault": "key_vault",
   "secret_id": "secret-id"
 }
+```
 
 You can replace "operation" with any of the supported operations (e.g., create, list_secrets, delete, import_all, etc.) and provide the required parameters.
 
@@ -49,15 +51,15 @@ Replace "name", "version", "key_vault", and "secret-id" with your specific value
 ## Supported Operations
 The following operations are supported by this plugin:
 
-Create Secrets: This takes an existing secret from DSM and imports it into AKV
-Import Secrets: Import an existing secret from AKV into DSM for secure management.
-Import All Secrets: Import all secrets from AKV into DSM for comprehensive management.
-List Secrets: Retrieve a list of secrets stored in AKV.
-List Secret with Versions: Retrieve a list of versions for all secrets stored in AKV.
-Delete Secret: Delete a secret from AKV.
-List of Deleted Secrets: Provides list of deleted secrets from AKV.
-Recover Secret: Recover a previously deleted secret in AKV.
-Purge Secret: Permanently remove a deleted secret from AKV.
+- Create Secrets: This takes an existing secret from DSM and imports it into AKV
+- Import Secrets: Import an existing secret from AKV into DSM for secure management.
+- Import All Secrets: Import all secrets from AKV into DSM for comprehensive management.
+- List Secrets: Retrieve a list of secrets stored in AKV.
+- List Secret with Versions: Retrieve a list of versions for all secrets stored in AKV.
+- Delete Secret: Delete a secret from AKV.
+- List of Deleted Secrets: Provides list of deleted secrets from AKV.
+- Recover Secret: Recover a previously deleted secret in AKV.
+- Purge Secret: Permanently remove a deleted secret from AKV.
 
 ## Conclusion
 The Fortanix DSM - Azure Key Vault Integration Plugin simplifies the management of secrets between Fortanix Data Security Manager and Azure Key Vault. It offers a range of operations to facilitate this integration securely. Follow the setup process and examples provided in this README to use the plugin effectively for your specific use cases.
