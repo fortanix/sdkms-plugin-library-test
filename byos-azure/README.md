@@ -1,4 +1,4 @@
-## Fortanix Data Security Manager (DSM) - Azure Key Vault Integration Plugin
+# Fortanix Data Security Manager (DSM) - Azure Key Vault Integration Plugin
 
 ## Introduction
 
