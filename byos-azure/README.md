@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This README provides an overview of the Fortanix DSM - Azure Key Vault Integration Plugin, which facilitates secret management between Fortanix Data Security Manager (DSM) and Azure Key Vault (AKV). The plugin offers various operations to interact with secrets in both DSM and AKV.
+This README provides an overview of the Fortanix DSM - Azure Key Vault Integration Plugin, which facilitates secret management between Fortanix Data Security Manager (DSM) and Azure Key Vault (AKV). The plugin offers various operations to interact with secrets in both DSM and AKV. It's capable of importing, listing, deleting, recovering, purging secrets, and more. The plugin employs authentication via Azure Active Directory and leverages the Azure Key Vault REST API to perform these operations.
 
 ## Use Cases
 
@@ -17,10 +17,6 @@ Delete Secret: Delete a secret from AKV.
 List of Deleted Secrets: Provides list of deleted secrets from AKV.
 Recover Secret: Recover a previously deleted secret in AKV.
 Purge Secret: Permanently remove a deleted secret from AKV.
-
-
-## Short Description
-This integration offers a set of functions to allow for secure secret management between DSM and AKV. It's capable of importing, listing, deleting, recovering, purging secrets, and more. The plugin employs authentication via Azure Active Directory and leverages the Azure Key Vault REST API to perform these operations.
 
 ## Setup Process
 
