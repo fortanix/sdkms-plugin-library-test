@@ -1,0 +1,8 @@
+{
+  "name": "SSH CA",
+  "version": 1.1,
+  "short_description": "Issue certificates for SSH authentication.",
+  "release_notes": [
+    "Fix documentation: correct cert_type values and JSON example syntax"
+  ]
+}
