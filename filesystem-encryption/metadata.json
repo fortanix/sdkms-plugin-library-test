@@ -1,0 +1,8 @@
+{
+  "name": "Fortanix DSM Filesystem Encryption (FSE) Plugin",
+  "version": 1.0,
+  "short_description": "This plugin implements recovery of the break-glass master key from the encrypted master key ID(s) and optional KEK ID available in the Fortanix DSM config (fortanix-dsm.conf) in the encrypted directory.",
+  "release_notes": [
+    "Initial Release"
+  ]
+}
