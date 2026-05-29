@@ -1,482 +1,8 @@
--- Name: Automated BYOK for Salesforce Cloud
--- Version: 1.0
--- Description: ## Short Description
--- This plugin implements the Bring your own key (BYOK) model for Salesforce. Using this plugin you can keep your key inside Fortanix Self-Defending KMS and use Shield Platform Encryption features of Salesforce.
--- ### ## Introduction
--- ## Use cases
--- 
--- The plugin can be used to
--- 
--- - Upload a key from Fortanix Self-Defending KMS to Salesforce
--- - Search tenant secrets (Salesforce encryption keys) using Salesforce Sobject Query Language (SSQL)
--- - Check current status of any key or key version
--- - Destroy the archived keys in Salesforce
--- - Restore a previously destroyed key
--- 
--- ## Fortanix Self-Defending KMS Setup
--- 
--- 1. Log in to Fortanix Self-Defending KMS (https://sdkms.fortanix.com)
--- 2. Create an account in Fortanix Self-Defending KMS
--- 3. Create a group in Fortanix Self-Defending KMS
--- 4. Create a plugin in Fortanix Self-Defending KMS
--- 
--- ## Configure Salesforce
--- 
--- 1. Create a New Profile under Setup >> Profiles.
---     Note: Select “Manage Encryption Keys” under “Administrative Permissions"
--- 2. Create a New User under Setup >> Users with these inputs –
---     Name: arbitrarily input
---     Profiles: choose the KMS role created in previous step
---     Note the credentials to securely import into Self-Defending KMS secret
--- 3. Create a Connected App under “Apps >> App Manager” with the following inputs –
---     Label: arbitrarily input
---     Check the “Enable OAuth Settings”
---     Check the “Enable Device Flow” for automated access
---     Note the credentials to securely import into Self-Defending KMS secret
--- 4. Whitelist the Fortanix Self-Defending KMS application IP range (CIDR)
--- 5. Create a Certificate under “Setup >> Certificate and Key Management” –
---     Label: arbitrarily input, but note it for later use
---     Uncheck the “Exportable Private Key”
---     Check the option to "Use Platform Encryption"
--- 6. Verify the Salesforce credentials
---     Client/Consumer Key  (Created in step 3)
---     Client/Consumer Secret (Created in step 3)
---     OAuth username (Created in step 2)
---     OAuth password (Created in step 2)
---     Tenant URI
---     API version (Fortanix Plugin tested against version 50.0
--- 
--- ## Input/Output JSON object format
--- 
--- ### ### Configure operation
--- 
--- This operation configures Salesforce credentials in Fortanix Self-Defending KMS and returns a UUID. You need to pass this UUID for other operations. This is a one time process.
--- 
--- ### ### parameters
--- 
--- * `operation`: The operation which you want to perform. A valid value is `configure`.
--- * `consumer_key`: Consumer Key of the connected app
--- * `consumer_secret`: Consumer Secret of the connected app
--- * `username`: OAuth username
--- * `password`: OAuth password
--- * `tenant`: Salesforce tenant URI
--- * `version`: API version (Fortanix Plugin tested against version 50.0)
--- * `name`: Name of the sobject. This sobject will be created in fortanix self-Defending KMS and will have Salesforce credential information
--- 
--- ### ### Example
--- 
--- Input JSON
--- ```
--- {
---   "operation": "configure",
---   "consumer_key": "CBK...................D",
---   "consumer_secret": "DMV................D",
---   "username" : "ft......x@<your company domain>",
---   "password" : "fy....K",
---   "tenant"   : "<Salesforce tenant URI>",
---   "version"  : "v50.0",
---   "name"    : "Salesforce NamedCred Dev"
--- }
--- ```
--- Output
--- ```
--- "3968218b-72c3-4ada-922a-8a917323f27d"
--- ```
--- 
--- 
--- ### ### Check operation
--- 
--- This operation is to test whether plugin can import wrapping certificate from salesforce into Fortanix self-Defending KMS. (This certificate is required by plugin to authenticate itself to salesforce)
--- 
--- ### ### parameters
--- 
--- * `operation`: The operation which you want to perform. A valid value is `check`
--- * `secret_id`: The response of `configuration` operation
--- * `wrapper`: Name of the wrapping certificate in salesforce
--- 
--- ### ### Example
--- 
--- Input JSON
--- ```
--- {
---   "operation": "check",
---   "secret_id": "3968218b-72c3-4ada-922a-8a917323f27d",
---   "wrapper"  : "SFBYOK_FTX_Wrapper"
--- }
--- ```
--- Output JSON
--- ```
--- {
---   "group_id": "ff2............................c",
---   "public_only": true,
---   "key_ops": [
---     "VERIFY",
---     "ENCRYPT",
---     "WRAPKEY",
---     "EXPORT"
---   ],
---   "enabled": true,
---   "rsa": {
---     "signature_policy": [
---       {
---         "padding": null
---       }
---     ],
---     "encryption_policy": [
---       {
---         "padding": {
---           "OAEP": {
---             "mgf": null
---           }
---         }
---       }
---     ],
---     "key_size": 4096
---   },
---   "state": "Active",
---   "created_at": "20201229T183553Z",
---   "key_size": 4096,
---   "kid": "6de........................4",
---   "origin": "External",
---   "lastused_at": "19700101T000000Z",
---   "obj_type": "CERTIFICATE",
---   "name": "SFBYOK_FTX_Wrapper",
---   "acct_id": "ec9.......................7",
---   "compliant_with_policies": true,
---   "creator": {
---     "plugin": "654.......................1"
---   },
---   "value": "MII........................9",
---   "activation_date": "20201229T183553Z",
---   "pub_key": "MII......................8",
---   "never_exportable": false
--- }
--- ```
--- 
--- 
--- ### ### Query operation
--- 
--- This operation allows you to search tenant secrets (Salesforce encryption keys) using Salesforce Sobject Query Language (SSQL)
--- 
--- ### ### parameters
--- 
--- * `operation`: The operation which you want to perform. A valid value is `query` or `search`
--- * `secret_id`: The response of `configuration` operation
--- * `query`: SSQL query
--- * `tooling`:
--- * `sandbox`:   To indicate, whether to use test or production tenant.
--- 
--- ### ### Example
--- 
--- Input JSON
--- ```
--- {
---   "operation": "search",
---   "secret_id": "3968218b-72c3-4ada-922a-8a917323f27d",
---   "query"   : "select Id, Status, Version from TenantSecret where Type = `Data`",
---   "tooling"  : false,
---   "sandbox"  : false
--- }
--- ```
--- Output JSON
--- ```
--- {
---   "done": true,
---   "totalSize": 5,
---   "records": [
---     {
---       "attributes": {
---         "type": "TenantSecret",
---         "url": "/services/data/v50.0/sobjects/TenantSecret/02G..........O"
---       },
---       "Status": "ARCHIVED",
---       "Id": "02G.............D",
---       "Version": 3
---     },
---     {
---       "Version": 1,
---       "attributes": {
---         "url": "/services/data/v50.0/sobjects/TenantSecret/02G...........W",
---         "type": "TenantSecret"
---       },
---       "Id": "02G...........W",
---       "Status": "ARCHIVED"
---     },
---     {
---       "Version": 2,
---       "Id": "02G..........O",
---       "attributes": {
---         "type": "TenantSecret",
---         "url": "/services/data/v50.0/sobjects/TenantSecret/02G............O"
---       },
---       "Status": "ARCHIVED"
---     },
---     {
---       "Id": "02G...........4",
---       "attributes": {
---         "url": "/services/data/v50.0/sobjects/TenantSecret/02G...........4",
---         "type": "TenantSecret"
---       },
---       "Version": 4,
---       "Status": "DESTROYED"
---     },
---     {
---       "attributes": {
---         "type": "TenantSecret",
---         "url": "/services/data/v50.0/sobjects/TenantSecret/02G............O"
---       },
---       "Id": "02G..........O",
---       "Version": 5,
---       "Status": "ACTIVE"
---     }
---   ]
--- }
--- ```
--- 
--- ### ### Upload operation
--- 
--- This operation allows you to create a key material in Fortanix self-Defending KMS and upload to salesforce
--- 
--- ### ### parameters
--- 
--- * `operation`: The operation which you want to perform. A valid value is `upload`.
--- * `secret_id`: The response of `configuration` operation
--- * `wrapper`: Name of the wrapping certificate in salesforce
--- * `type`: A valid values are `Data|EventBus|SearchIndex`
--- * `mode`: Key derivation mode. It can be blank which defaults to “PBKDF2” or can also be "NONE" to disable key derivation in Salesforce.
--- * `name`: Prefix of the name
--- * `sandbox`:  To indicate, whether to use test or production tenant.
--- 
--- ### ### Example
--- 
--- Input JSON
--- ```
--- {
---   "operation": "upload",
---   "secret_id": "3968218b-72c3-4ada-922a-8a917323f27d",
---   "wrapper"  : "SFBYOK_FTX_Wrapper",
---   "type"     : "Data",
---   "mode"     :  "",
---   "name"     : "Salesforce Data Key",
---   "sandbox"  : false
--- }
--- 
--- ```
--- Output JSON
--- ```
--- {
---   "obj_type": "AES",
---   "custom_metadata": {
---     "SF_HASH": "ESP.......................=",
---     "SF_UPLOAD": "EDF.....................=",
---     "SF_WRAPPER": "SFBYOK_FTX_Wrapper",
---     "SF_MODE": "",
---     "SF_KID": "02G...........O",
---     "SF_TYPE": "Data"
---   },
---   "acct_id": "ec9...................7",
---   "creator": {
---     "plugin": "654....................1"
---   },
---   "public_only": false,
---   "origin": "Transient",
---   "kid": "bb7................3",
---   "lastused_at": "19700101T000000Z",
---   "activation_date": "20201229T185549Z",
---   "key_size": 256,
---   "kcv": "b5...9",
---   "name": "Salesforce Data Key 20201229T185546Z",
---   "state": "Active",
---   "enabled": true,
---   "key_ops": [
---     "EXPORT"
---   ],
---   "compliant_with_policies": true,
---   "created_at": "20201229T185549Z",
---   "aes": {
---     "tag_length": null,
---     "key_sizes": null,
---     "random_iv": null,
---     "fpe": null,
---     "iv_length": null,
---     "cipher_mode": null
---   },
---   "never_exportable": false,
---   "group_id": "ff2..............b"
--- }
--- ```
--- 
--- ### ### Status operation
--- 
--- This operation allows you to obtain current status of a salesforce key
--- 
--- ### ### parameters
--- 
--- * `operation`: The operation which you want to perform. A valid value is `status`.
--- * `secret_id`: The response of `configuration` operation
--- * `wrapper`: Name of the wrapping certificate in salesforce
--- * `name`: "name of corresponding sobject in fotanix self-Defending KMS"
--- * `sandbox`:   To indicate, whether to use test or production tenant.
--- 
--- ### ### Example
--- 
--- Input JSON
--- ```
--- {
---       "operation" : "status",
---       "secret_id": "3968218b-72c3-4ada-922a-8a917323f27d",
---       "wrapper"   : "SFBYOK_FTX_Wrapper",
---       "name"      : "Salesforce Data Key 20201229T185546Z",
---       "sandbox"   : false
--- }
--- ```
--- Output JSON
--- ```
--- {
---   "RemoteKeyIdentifier": null,
---   "CreatedDate": "2020-12-29T18:55:49.000+0000",
---   "SecretValueHash": "ESP........................=",
---   "CreatedById": "005..........2",
---   "KeyDerivationMode": "PBKDF2",
---   "attributes": {
---     "url": "/services/data/v50.0/sobjects/TenantSecret/02G..........O",
---     "type": "TenantSecret"
---   },
---   "LastModifiedDate": "2020-12-29T18:55:49.000+0000",
---   "IsDeleted": false,
---   "SecretValue": "CgM.............................=",
---   "SecretValueCertificate": null,
---   "Type": "Data",
---   "RemoteKeyServiceId": null,
---   "Version": 6,
---   "Id": "02G..........O",
---   "Status": "ACTIVE",
---   "SystemModstamp": "2020-12-29T18:55:49.000+0000",
---   "RemoteKeyCertificate": null,
---   "Source": "UPLOADED",
---   "Description": "Salesforce Data Key 20201229T185546Z",
---   "LastModifiedById": "005............2"
--- }
--- ```
--- ### ### Sync operation
--- 
--- This operation allows you to sync Fortanix self-Defending key object with salesforce key.
--- 
--- ### ### parameters
--- 
--- * `operation`: The operation which you want to perform. A valid value is `sync`.
--- * `secret_id`: The response of `configuration` operation
--- * `wrapper`: Name of the wrapping certificate in salesforce
--- * `name`: "name of corresponding sobject in fotanix self-Defending KMS"
--- * `sandbox`:   To indicate, whether to use test or production tenant.
--- 
--- ### ### Example
--- 
--- Input JSON
--- ```
--- {
---       "operation" : "sync",
---       "secret_id": "3968218b-72c3-4ada-922a-8a917323f27d",
---       "wrapper"   : "SFBYOK_FTX_Wrapper",
---       "name"      : "Salesforce Data Key 20201229T185546Z",
---       "sandbox"   : false
--- }
--- ```
--- Output JSON
--- ```
--- {
---   "RemoteKeyCertificate": null,
---   "IsDeleted": false,
---   "CreatedById": "005..............2",
---   "Status": "ACTIVE",
---   "Type": "Data",
---   "LastModifiedById": "005............2",
---   "CreatedDate": "2020-12-29T18:55:49.000+0000",
---   "SystemModstamp": "2020-12-29T18:55:49.000+0000",
---   "Source": "UPLOADED",
---   "SecretValueHash": "ESP.................c",
---   "LastModifiedDate": "2020-12-29T18:55:49.000+0000",
---   "Version": 6,
---   "RemoteKeyServiceId": null,
---   "RemoteKeyIdentifier": null,
---   "attributes": {
---     "type": "TenantSecret",
---     "url": "/services/data/v50.0/sobjects/TenantSecret/02G............O"
---   },
---   "KeyDerivationMode": "PBKDF2",
---   "Id": "02G...........O",
---   "SecretValueCertificate": null,
---   "Description": "Salesforce Data Key 20201229T185546Z",
---   "SecretValue": "CgM........................M"
--- }
--- ```
--- ### ### Destroy operation
--- 
--- This operation allows you to destroy an archived salesforce key.
--- 
--- ### ### parameters
--- 
--- * `operation`: The operation which you want to perform. A valid value is `destroy`.
--- * `secret_id`: The response of `configuration` operation
--- * `wrapper`: Name of the wrapping certificate in salesforce
--- * `name`: "name of corresponding sobject in fotanix self-Defending KMS"
--- * `sandbox`:   To indicate, whether to use test or production tenant.
--- 
--- ### ### Example
--- 
--- Input JSON
--- ```
--- {
---       "operation" : "destroy",
---       "secret_id": "3968218b-72c3-4ada-922a-8a917323f27d",
---       "wrapper"   : "SFBYOK_FTX_Wrapper",
---       "name"      : "Salesforce Data Key 20201229T185546Z",
---       "sandbox"   : false
--- }
--- ```
--- Output
--- ```
--- output is empty, with http status indicating success.
--- ```
--- ### ### Restore operation
--- 
--- This operation allows you to restore a destroyed salesforce key.
--- 
--- ### ### parameters
--- 
--- * `operation`: The operation which you want to perform. A valid value is `restore`.
--- * `secret_id`: The response of `configuration` operation
--- * `wrapper`: Name of the wrapping certificate in salesforce
--- * `name`: "name of corresponding sobject in fotanix self-Defending KMS"
--- * `sandbox`:   To indicate, whether to use test or production tenant.
--- 
--- ### ### Example
--- 
--- Input JSON
--- ```
--- {
---       "operation" : "restore",
---       "secret_id": "3968218b-72c3-4ada-922a-8a917323f27d",
---       "wrapper"   : "SFBYOK_FTX_Wrapper",
---       "name"      : "Salesforce Data Key 20201229T185546Z",
---       "sandbox"   : false
--- }
--- ```
--- Output
--- ```
--- output is empty, with http status indicating success.
--- ``` 
--- 
--- ### Release Notes
--- - Initial release
-
 --[[
 {
   "operation": "configure",
   "consumer_key": "3MV....................................M",
   "consumer_secret": "D16..............................B",
-  "username" : "ftx....k@<your company domain>",
-  "password" : "tes....K",
   "tenant"   : <salesforce tenant uri>,
   "version"  : "v50.0",
   "name"    : "Salesforce NamedCred Dev"
@@ -492,15 +18,13 @@
   "sobject"  : "TenantSecret",
   "tooling"   : false,
   "method"    : "GET|PUT|PATCH|DELETE",
-  "body"     : { "Name":"FTX_BYOK_Updated" },
-  "sandbox"   : false
+  "body"     : { "Name":"FTX_BYOK_Updated" }
 }
 {
   "operation": "search",
   "secret_id": "66ace024-f175-4e0d-bb41-655faae3d475",
   "query"   : "select MasterLabel from Certificate where DeveloperName = 'SFBYOK_FTX_Wrapper'",
-  "tooling"  : true,
-  "sandbox"  : false
+  "tooling"  : true
 }
 {
   "operation": "upload",
@@ -508,15 +32,13 @@
   "wrapper"  : "Fortanix BYOK Certificate",
   "type"     : "Data|SearchIndex|EventBus",
   "mode"     :  "",
-  "name"     : "Salesforce Data Key",
-  "sandbox"  : false
+  "name"     : "Salesforce Data Key"
 }
 {
   "operation" : "status|sync|archive|destroy|restore",
   "secret_id" : "66ace024-f175-4e0d-bb41-655faae3d475",
   "wrapper"   : "SFBYOK_FTX_Wrapper",
-  "name"      : "Salesforce Key 20201023T180906Z",
-  "sandbox"   : false
+  "name"      : "Salesforce Key 20201023T180906Z"
 }
 ]]--
 
@@ -531,7 +53,7 @@ local sf_metadata  = '/metadata'
 local sf_resource = '/sobjects'
 local sf_search = '/query'
 local sf_object = "TenantSecret"
-local sf_login_url = "https://login.salesforce.com/services/oauth2/token"
+local sf_oauth_path = "/services/oauth2/token"
 
 -- Internal helpers
 function get_auth_token()
@@ -539,11 +61,9 @@ function get_auth_token()
   assert(sf_secret.login_url)
   
   local headers = { ['Content-Type'] = content_type_url }
-    local request_body = "grant_type=password&client_id="..sf_secret.consumer_key..
-      "&client_secret="..sf_secret.consumer_secret..
-      "&username="..sf_secret.username..
-      "&password="..sf_secret.password
-
+    local request_body = "grant_type=client_credentials&client_id="..sf_secret.consumer_key..
+      "&client_secret="..sf_secret.consumer_secret
+  
   local req_obj = { method="POST", url=sf_secret.login_url, headers=headers, body=request_body }
   if DEBUG == "AUTH1" then return req_obj end
   local response, err = request (req_obj)
@@ -601,10 +121,6 @@ function configure(input)
     return nil, "Need a valid consumer_key"
   elseif type(input.consumer_secret) ~= "string" then
     return nil, "Need a valid consumer_secret"
-  elseif type(input.username) ~= "string" then
-    return nil, "Need a valid username"
-  elseif type(input.password) ~= "string" then
-    return nil, "Need a valid password"
   else
     if input.version ~= nil and type(input.version) == "string" then
       if string.find(input.version, "^v?%d%d%.%d$") then
@@ -706,6 +222,13 @@ function upload_byok(input)
   else -- restore
     tmp_sf_byok_sobj = assert(Sobject{ name = assert(input.name) })
   end
+
+  local rekey_tmp
+  if input.operation == "rotate" then
+    rekey_tmp = tmp_sf_byok_sobj:rekey{name=tmp_sf_byok_sobj.name}
+    assert(tmp_sf_byok_sobj:update{ enabled = false })
+    tmp_sf_byok_sobj = rekey_tmp
+  end
   
   local tmp_sf_byok_enc = assert(tmp_sf_cert_sojbj:wrap {
       subject = tmp_sf_byok_sobj, alg = 'RSA', mode = 'OAEP_MGF1_SHA1'})
@@ -731,7 +254,8 @@ function upload_byok(input)
     SecretValue = tmp_sf_byok_enc.wrapped_key, SecretValueHash = tmp_sf_byok_sha256, 
     description = sf_byok_desc, type = sf_byok_type, KeyDerivationMode = sf_byok_mode }
   if DEBUG == "BYOK1" then return sf_key_payload end
-  if input.operation ~= "upload" then -- restore
+
+  if input.operation ~= "upload" and input.operation ~= "rotate" then -- restore
     return sf_key_payload
   end
   
@@ -751,9 +275,11 @@ function upload_byok(input)
       SF_WRAPPER = sf_cert_label, SF_UPLOAD = sf_key_payload.SecretValue:base64(), SF_HASH = sf_key_payload.SecretValueHash:base64() }
   end
 
-  local persisted_byok = assert(tmp_sf_byok_sobj:persist{ name = sf_byok_desc, custom_metadata = {SF_KID = sf_kid} })
   if DEBUG == "BYOK3" then return sf_metadata end
-  if DEBUG == "BYOK4" then return persisted_byok end
+  if input.operation == "upload" then
+    local persisted_byok = assert(tmp_sf_byok_sobj:persist{ name = sf_byok_desc, custom_metadata = {SF_KID = sf_kid} })
+    if DEBUG == "BYOK4" then return persisted_byok end
+  end
 
   -- need to refetch as persisted sobject doesn't handle :update
   tmp_sf_byok_sobj = assert(Sobject{ name = assert(sf_byok_desc) })
@@ -829,6 +355,7 @@ end
 function check(input)
   if input.DEBUG ~= nil then DEBUG = input.DEBUG end
   if input.debug ~= nil then DEBUG = input.debug end
+  if DEBUG == nil then DEBUG = "" end
 
   if input.operation == nil then
     return nil, "Need a valid operation"
@@ -842,10 +369,9 @@ function check(input)
       else
         local sf_sec_raw_blob = sf_sec_raw:export().value:bytes()
         sf_secret = json.decode(sf_sec_raw_blob)
-        if input.sandbox then sf_login_url = sf_login_url:gsub('login','test') end
-        sf_secret.login_url = sf_login_url
         sf_secret.tenant  = sf_sec_raw.custom_metadata["Tenant"]
         sf_secret.version = sf_sec_raw.custom_metadata["Version"]
+        sf_secret.login_url = sf_secret.tenant .. sf_oauth_path
       end
     end
   end
@@ -860,7 +386,7 @@ function run(input, url, method)
     return select_sobject(input)
   elseif input.operation == "search" or input.operation == "query" then
     return run_query(input)
-  elseif input.operation == "upload" or input.operation == "test" then
+  elseif input.operation == "upload" or input.operation == "rotate" or input.operation == "test" then
     return upload_byok(input)
   elseif input.operation == "status" or input.operation == "sync" or 
     input.operation == "archive" or input.operation == "destroy" or 
@@ -870,4 +396,3 @@ function run(input, url, method)
     return nil, "Invalid operation"
   end
 end
-

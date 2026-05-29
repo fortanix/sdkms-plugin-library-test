@@ -1,0 +1,10 @@
+{
+  "name": "Automated BYOK for Salesforce Cloud",
+  "version": 1.2,
+  "short_description": "This plugin implements the Bring your own key (BYOK) model for Salesforce Shield Platform Encryption. Fortanix DSM keys are securely provisioned as tenant secrets in Salesforce.",
+  "release_notes": [
+    "Initial Release",
+    "Doc refresh and Rekey op",
+    "Changed login from Connected App to External Client App"
+  ]
+}
